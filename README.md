@@ -1,4 +1,4 @@
-# Principal-components-and-penguins-by-ellis2013nz
+# Principal-components-and-penguins
 
 A short post today to get me back in the swing of it, after a four month break – my longest since starting the blog. But a short post with a warning – this is something that nearly caught me out and has potentially catastrophic but silent (ie unnoticed) consequences.
 
@@ -8,28 +8,28 @@ Let’s illustrate the method with the Palmer penguins data. We have 333 complet
 
 …created with this pretty minimal set of R code:
 
-library(palmerpenguins)
-library(tidyverse)
-library(scales)
+    library(palmerpenguins)
+    library(tidyverse)
+    library(scales)
 
-penguins2 <- drop_na(penguins) %>%
-  mutate(row_id = 1:n())
+    penguins2 <- drop_na(penguins) %>%
+      mutate(row_id = 1:n())
 
-m1 <- penguins2 %>%
-  select(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g) 
+    m1 <- penguins2 %>%
+      select(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g) 
 
-pc1 <- prcomp(m1, scale = TRUE)
-penguins2$pc1 <- rescale(predict(pc1)[, 1])
+    pc1 <- prcomp(m1, scale = TRUE)
+    penguins2$pc1 <- rescale(predict(pc1)[, 1])
 
-penguins2 %>%
-  ggplot(aes(x = body_mass_g, y = pc1, colour = species)) +
-  geom_point() +
-  labs(x = "Body mass in grams",
-       y = "First principal component\n(rescaled from zero to 1)",
-       caption = "Example data: Palmer Penguins",
-       colour = "Species:",
-       title = "First principal component of four-dimensional data",
-       subtitle = "Fit to data in its original row order")
+    penguins2 %>%
+      ggplot(aes(x = body_mass_g, y = pc1, colour = species)) +
+      geom_point() +
+      labs(x = "Body mass in grams",
+           y = "First principal component\n(rescaled from zero to 1)",
+           caption = "Example data: Palmer Penguins",
+           colour = "Species:",
+           title = "First principal component of four-dimensional data",
+           subtitle = "Fit to data in its original row order")
 
 OK, great. That first principal component is positively correlated with body mass, flipper length and bill length so it’s clearly reasonable to describe it as a “size” indicator, and higher numbers mean a bigger penguin. I imagine biologists are horrified at this crude procedure, but it’s only for illustrative purposes.
 
@@ -37,27 +37,27 @@ However, principal components are only defined up to an arbitrary positive or ne
 
 Here’s the code that did that. The only substantive difference from the first chunk of code is that I have sorted the data in random order (this is what happens when you create sample with same number of rows as the original, without replacement, as is being done by the sample_n() function).
 
-set.seed(123)
-m2 <- penguins2 %>%
-  select(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g, row_id) %>%
-  sample_n(n())
+    set.seed(123)
+    m2 <- penguins2 %>%
+      select(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g, row_id) %>%
+      sample_n(n())
 
-pc2 <- prcomp(select(m2, -row_id), scale = TRUE)
+    pc2 <- prcomp(select(m2, -row_id), scale = TRUE)
 
-penguins3 <- m2 %>%
-  mutate(pc2 = rescale(predict(pc2)[, 1])) %>%
-  select(row_id, pc2) %>%
-  inner_join(penguins2, by = "row_id") 
+    penguins3 <- m2 %>%
+      mutate(pc2 = rescale(predict(pc2)[, 1])) %>%
+      select(row_id, pc2) %>%
+      inner_join(penguins2, by = "row_id") 
 
-penguins3 %>%
-  ggplot(aes(x = body_mass_g, y = pc2, colour = species)) +
-  geom_point() +
-  labs(x = "Body mass in grams",
-       y = "First principal component\n(rescaled from zero to 1)",
-       caption = "Example data: Palmer Penguins",
-       colour = "Species:",
-       title = "First principal component of four-dimensional data",
-       subtitle = "Fit to data in a different row order")
+    penguins3 %>%
+      ggplot(aes(x = body_mass_g, y = pc2, colour = species)) +
+      geom_point() +
+      labs(x = "Body mass in grams",
+           y = "First principal component\n(rescaled from zero to 1)",
+           caption = "Example data: Palmer Penguins",
+           colour = "Species:",
+           title = "First principal component of four-dimensional data",
+           subtitle = "Fit to data in a different row order")
 
 This next chart shows the relationship between the two “size” indices we have made with the same procedure. The second version is in fact one minus the first version. It is just as good an indicator of size, but it has weak interpretability because higher numbers are smaller penguins. Worse, if this was just a sub indicator on the way to being combined with others to form an overall index, it would be easy to assume after a visual check on one run of the procedure that “higher is bigger” and feed it into the overall index on that assumption – which can’t be relied on for the future. If some new data comes in, or even if the process is run on the same data but in a different order, the meaning of the indicator will be exactly reversed.
 
@@ -65,14 +65,14 @@ Where this nearly caught us out at work the data was coming from a database that
 
 Final chunk of code that was used to make that comparison of the two indexes:
 
-penguins3 %>%
-  ggplot(aes(x = pc1, y = pc2, colour = species)) +
-  geom_point() +
-  labs(x = "When fit to data in original row order",
-       y = "When fit to data in a different row order",
-       title = "The direction of a principal component can vary based on the data's arrangement",
-       subtitle = "Comparison of the first principal component, scaled from 0 to 1, fit to the same data",
-       caption = "Example data: Palmer Penguins",
-       colour = "Species:") +
-  coord_equal() +
-  theme(plot.title.position = "plot")
+    penguins3 %>%
+      ggplot(aes(x = pc1, y = pc2, colour = species)) +
+      geom_point() +
+      labs(x = "When fit to data in original row order",
+           y = "When fit to data in a different row order",
+           title = "The direction of a principal component can vary based on the data's arrangement",
+           subtitle = "Comparison of the first principal component, scaled from 0 to 1, fit to the same data",
+           caption = "Example data: Palmer Penguins",
+           colour = "Species:") +
+      coord_equal() +
+      theme(plot.title.position = "plot")
